@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import shutil
 import chromadb
+import chromadb.config  # Ensure Chroma settings are used correctly
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.llms import Ollama
@@ -46,9 +47,17 @@ if uploaded_file is not None:
         except PermissionError:
             st.error("Error: Could not delete existing ChromaDB index. Please restart the application and try again.")
     
-    # Create vector store with correct embedding model (768-dimensions)
+    # Use DuckDB+Parquet to avoid SQLite issues
     embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L12-v2")
-    vector_store = Chroma.from_documents(split_docs, embedding_model, persist_directory="db")
+    vector_store = Chroma.from_documents(
+        split_docs, 
+        embedding_model, 
+        persist_directory="db",
+        client_settings=chromadb.config.Settings(
+            chroma_db_impl="duckdb+parquet",  # Use DuckDB instead of SQLite
+            persist_directory="db"
+        )
+    )
     vector_store.persist()
     st.success("Document successfully indexed into ChromaDB!")
     
