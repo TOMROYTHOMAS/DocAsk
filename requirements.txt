@@ -1,2 +1,4 @@
 chromadb
 pysqlite3
+
+chromadb
